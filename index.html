@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Goodle Drive — Cloud Storage Dashboard</title>
+  <!-- Precompiled utilities work without Node.js or a CDN at runtime. -->
+  <link rel="stylesheet" href="assets/css/tailwind.css">
+  <!-- Google Fonts: Plus Jakarta Sans & Inter for crisp geometric UI typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="assets/js/app.js" defer></script>
+
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="p-2 sm:p-5 md:p-8 lg:p-10 flex items-center justify-center min-h-screen select-none">
+
+  <!-- MAIN APPLICATION CONTAINER -->
+  <div class="app-frame w-full max-w-[1340px] min-h-[820px] flex flex-col relative">
+
+    <!-- ==================== TOP HEADER BAR ==================== -->
+    <header class="w-full bg-white px-5 sm:px-8 pt-6 pb-4 flex flex-wrap items-center justify-between gap-4 z-20">
+      
+      <!-- Left: Logo + "Goodle Drive" Brand -->
+      <div class="flex items-center gap-3 cursor-pointer group" onclick="switchMenu('mydrive')">
+        <button id="mobileMenuBtn" onclick="event.stopPropagation(); toggleMobileSidebar()" class="lg:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200" aria-label="Toggle navigation menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <!-- Classic Blue Google Drive Faceted Triangle SVG -->
+        <div class="w-9 h-9 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+          <svg viewBox="0 0 36 32" class="w-7 h-7" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Top / Right Wing -->
+            <path d="M12.4 1.5L23.6 1.5L34.5 20.2L23.3 20.2L12.4 1.5Z" fill="#1E5CE6"/>
+            <!-- Left Wing -->
+            <path d="M11.2 3.3L16.8 12.9L6.8 30.1L1.2 20.5L11.2 3.3Z" fill="#194EC2"/>
+            <!-- Bottom Bar -->
+            <path d="M8.8 30.5L30.2 30.5L35.2 21.8L13.8 21.8L8.8 30.5Z" fill="#3B76F6"/>
+          </svg>
+        </div>
+        <span class="text-[#1E5CE6] font-extrabold text-[22px] tracking-tight">Goodle Drive</span>
+      </div>
+
+      <!-- Center: Pill Search Input -->
+      <div class="flex-1 max-w-[440px] mx-auto order-3 sm:order-2 w-full sm:w-auto">
+        <div class="relative flex items-center w-full bg-[#F3F5F8] hover:bg-[#EBEEF4] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#1E5CE6]/30 rounded-full px-4 py-2.5 transition-all duration-200">
+          <svg class="w-4 h-4 text-slate-400 mr-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path stroke-linecap="round" d="M20 20l-3.5-3.5"></path>
+          </svg>
+          <input
+            id="searchInput"
+            aria-label="Search files and folders"
+            type="text"
+            placeholder="Search Drive.."
+            oninput="handleSearch(this.value)"
+            class="w-full bg-transparent text-xs sm:text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none font-body"
+          />
+          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden text-slate-400 hover:text-slate-600 ml-1" aria-label="Clear search">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Action Icons, User Profile & Filter Sliders -->
+      <div class="flex items-center gap-3 sm:gap-5 order-2 sm:order-3">
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button onclick="toggleDropdown('notifDropdown')" class="relative p-1.5 text-slate-700 hover:text-[#1E5CE6] rounded-full hover:bg-slate-100 transition-colors" title="Notifications" aria-label="Notifications">
+            <svg class="w-[21px] h-[21px]" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span id="notifBadge" class="absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
+          </button>
+          <!-- Notification Dropdown -->
+          <div id="notifDropdown" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 z-50">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <span class="font-bold text-xs uppercase tracking-wider text-slate-800">Notifications</span>
+              <button onclick="markNotificationsRead()" class="text-[11px] text-[#1E5CE6] font-semibold hover:underline">Mark all read</button>
+            </div>
+            <div class="divide-y divide-slate-100 max-h-60 overflow-y-auto mt-1">
+              <div class="py-2.5 flex items-start gap-3">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover shrink-0" alt="User"/>
+                <div>
+                  <p class="text-xs text-slate-700"><span class="font-semibold">Sarah Jenkins</span> shared <span class="text-[#1E5CE6] font-medium">Design Files</span> with you.</p>
+                  <span class="text-[10px] text-slate-400">12 mins ago</span>
+                </div>
+              </div>
+              <div class="py-2.5 flex items-start gap-3">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover shrink-0" alt="User"/>
+                <div>
+                  <p class="text-xs text-slate-700"><span class="font-semibold">Alex Rivera</span> commented on <span class="text-[#1E5CE6] font-medium">Weekly Report Docs</span>.</p>
+                  <span class="text-[10px] text-slate-400">2 hours ago</span>
+                </div>
+              </div>
+              <div class="py-2.5 flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-700">Cloud Backup completed for <span class="font-semibold">MacBook Pro 16</span>.</p>
+                  <span class="text-[10px] text-slate-400">Yesterday</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Help (?) Circle Icon -->
+        <button onclick="showToast('Goodle Drive Help Center & Keyboard Shortcuts opened.')" class="p-1.5 text-slate-700 hover:text-[#1E5CE6] rounded-full hover:bg-slate-100 transition-colors" title="Help & Support" aria-label="Help and support">
+          <svg class="w-[21px] h-[21px]" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01"/>
+          </svg>
+        </button>
+
+        <!-- Settings Gear Icon -->
+        <button onclick="openModal('settingsModal')" class="p-1.5 text-slate-700 hover:text-[#1E5CE6] rounded-full hover:bg-slate-100 transition-colors" title="Settings" aria-label="Settings">
+          <svg class="w-[21px] h-[21px]" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+
+        <!-- User Profile: "Jessica" + Blue Circle Avatar "J" -->
+        <div onclick="showToast('Signed in as Jessica (jessica@goodledrive.com)')" class="flex items-center gap-2.5 pl-2 cursor-pointer group">
+          <span class="text-xs font-semibold text-slate-700 group-hover:text-[#1E5CE6] transition-colors hidden sm:inline">Jessica</span>
+          <div class="w-8 h-8 rounded-full bg-[#1E5CE6] text-white font-semibold text-sm flex items-center justify-center shadow-sm group-hover:ring-4 group-hover:ring-blue-100 transition-all">
+            J
+          </div>
+        </div>
+
+        <!-- Filter Sliders Icon (Far right in mockup) -->
+        <button onclick="cycleSortOrder()" class="p-1.5 text-slate-700 hover:text-[#1E5CE6] rounded-lg hover:bg-slate-100 transition-colors ml-1" title="Sort & Filter Files" aria-label="Sort and filter files">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <line x1="4" y1="6" x2="20" y2="6" stroke-linecap="round"/>
+            <circle cx="15" cy="6" r="2" fill="#FFFFFF" stroke="currentColor" stroke-width="1.6"/>
+            <line x1="4" y1="12" x2="20" y2="12" stroke-linecap="round"/>
+            <circle cx="9" cy="12" r="2" fill="#FFFFFF" stroke="currentColor" stroke-width="1.6"/>
+            <line x1="4" y1="18" x2="20" y2="18" stroke-linecap="round"/>
+            <circle cx="14" cy="18" r="2" fill="#FFFFFF" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== BODY AREA (SIDEBAR + MAIN CONTENT) ==================== -->
+    <div class="flex flex-1 relative overflow-hidden">
+
+      <!-- Mobile Overlay -->
+      <div id="sidebarBackdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+      <!-- ==================== LEFT CURVED ROYAL BLUE SIDEBAR ==================== -->
+      <aside id="appSidebar" class="curved-sidebar w-[240px] shrink-0 text-white flex flex-col justify-between pt-8 pb-7 px-6 z-40 fixed lg:static inset-y-0 left-0 -translate-x-full lg:translate-x-0">
+        
+        <!-- Top CTA + Navigation Links -->
+        <div>
+          <!-- "Upload New Files" Pill CTA -->
+          <div class="px-1 mb-8">
+            <button
+              onclick="openModal('uploadModal')"
+              class="w-full bg-white text-[#1E5CE6] hover:bg-blue-50 active:scale-[0.98] font-semibold text-xs py-3.5 px-5 rounded-full shadow-lg shadow-blue-950/20 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <span>Upload New Files</span>
+            </button>
+          </div>
+
+          <!-- Sidebar Menu List -->
+          <nav class="space-y-1.5 -mx-3" id="sidebarNav">
+            <!-- 1. My Drive -->
+            <button onclick="switchMenu('mydrive')" data-menu="mydrive" class="nav-item active w-full flex items-center gap-4 px-5 py-2.5 rounded-xl text-left text-xs text-white/90">
+              <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 3.5h5L21 15l-2.5 4.5h-13L3 15 9.5 3.5z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 15h18M9.5 3.5L15 15m-9.5 4.5L12 8.5"/>
+              </svg>
+              <span>My Drive</span>
+            </button>
+
+            <!-- 2. Computers -->
+            <button onclick="switchMenu('computers')" data-menu="computers" class="nav-item w-full flex items-center gap-4 px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="12" rx="2"/>
+                <path stroke-linecap="round" d="M8 20h8M12 16v4"/>
+              </svg>
+              <span>Computers</span>
+            </button>
+
+            <!-- 3. Shared With Me -->
+            <button onclick="switchMenu('shared')" data-menu="shared" class="nav-item w-full flex items-center gap-4 px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-1.5a3.5 3.5 0 00-5.196-3.06M9 20H2v-1.5a4.5 4.5 0 019 0V20zm3-11a3 3 0 11-6 0 3 3 0 016 0zm6 2a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+              </svg>
+              <span>Shared With Me</span>
+            </button>
+
+            <!-- 4. Recents -->
+            <button onclick="switchMenu('recents')" data-menu="recents" class="nav-item w-full flex items-center gap-4 px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8.5"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5v4.5l3 1.8"/>
+              </svg>
+              <span>Recents</span>
+            </button>
+
+            <!-- 5. Trash -->
+            <button onclick="switchMenu('trash')" data-menu="trash" class="nav-item w-full flex items-center justify-between px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <div class="flex items-center gap-4">
+                <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                <span>Trash</span>
+              </div>
+              <span id="trashCountBadge" class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-semibold">3</span>
+            </button>
+
+            <!-- 6. Starred -->
+            <button onclick="switchMenu('starred')" data-menu="starred" class="nav-item w-full flex items-center justify-between px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <div class="flex items-center gap-4">
+                <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                </svg>
+                <span>Starred</span>
+              </div>
+              <span id="starredCountBadge" class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-semibold">2</span>
+            </button>
+
+            <!-- 7. Backups -->
+            <button onclick="switchMenu('backups')" data-menu="backups" class="nav-item w-full flex items-center gap-4 px-5 py-2.5 rounded-xl text-left text-xs text-white/85">
+              <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5m4-1v5l3 2"/>
+              </svg>
+              <span>Backups</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Bottom: STORAGE DETAILS -->
+        <div class="pt-6 mt-6 border-t border-white/15">
+          <p class="text-[10px] font-semibold tracking-wider uppercase text-blue-200 mb-3.5">STORAGE DETAILS</p>
+
+          <!-- Storage Item 1: Cloud Storage -->
+          <div class="mb-4">
+            <div class="flex items-center gap-2.5 text-xs text-white/95 mb-2">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+              </svg>
+              <span class="font-medium">Storage</span>
+            </div>
+            <div class="w-full h-[3px] bg-white/25 rounded-full overflow-hidden mb-1.5">
+              <div id="storageBarFill" class="storage-bar-fill h-full bg-white rounded-full" style="width: 62%;"></div>
+            </div>
+            <p id="storageTextLabel" class="text-[10.5px] text-blue-100/90 font-body">60.70 GB of 1 TB used</p>
+          </div>
+
+          <!-- Storage Item 2: Photos -->
+          <div class="mb-5">
+            <div class="flex items-center gap-2.5 text-xs text-white/95 mb-2">
+              <!-- Google Photos Pinwheel outline icon -->
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 12V4a4 4 0 014 4h-4zm0 0h8a4 4 0 01-4 4v-4zm0 0v8a4 4 0 01-4-4h4zm0 0H4a4 4 0 014-4v4z"/>
+              </svg>
+              <span class="font-medium">Photos</span>
+            </div>
+            <div class="w-full h-[3px] bg-white/25 rounded-full overflow-hidden mb-1.5">
+              <div id="photosBarFill" class="storage-bar-fill h-full bg-white rounded-full" style="width: 28%;"></div>
+            </div>
+            <p id="photosTextLabel" class="text-[10.5px] text-blue-100/90 font-body">10.70 GB of 1 TB used</p>
+          </div>
+
+          <!-- Upgrade Storage Link -->
+          <button
+            onclick="openModal('upgradeModal')"
+            class="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-white hover:text-blue-100 group transition-colors"
+          >
+            <span>Upgrade Storage</span>
+            <svg class="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M9 7h8v8"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- ==================== MAIN CONTENT WORKSPACE ==================== -->
+      <main class="flex-1 flex flex-col px-5 sm:px-9 lg:px-11 pt-4 pb-8 overflow-y-auto">
+        
+        <!-- Dynamic Page Header Row (Matches Reference "My Drive" + Folder Plus button + Right View/Info toggles) -->
+        <div class="flex items-center justify-between mb-7">
+          <div class="flex items-center gap-3.5">
+            <h1 id="pageTitle" class="text-[26px] sm:text-[28px] font-extrabold text-[#1E5CE6] tracking-tight">My Drive</h1>
+            <!-- Breadcrumb badge when inside a subfolder -->
+            <div id="folderBreadcrumb" class="hidden items-center gap-2">
+              <span class="text-slate-300 font-bold text-lg">/</span>
+              <span id="activeBreadcrumbName" class="bg-blue-50 text-[#1E5CE6] font-bold text-sm px-3 py-1 rounded-xl border border-blue-200">Design Files</span>
+              <button onclick="exitSubfolder()" class="text-xs text-slate-400 hover:text-rose-500 ml-1 font-medium underline">Back to all</button>
+            </div>
+            <!-- Blue Rounded Square New Folder Button (Exact match to mockup) -->
+            <button
+              onclick="openModal('newFolderModal')"
+              title="Create New Folder"
+              aria-label="Create new folder"
+              class="w-10 h-10 rounded-[11px] bg-[#1E5CE6] hover:bg-[#1749B8] active:scale-95 text-white flex items-center justify-center shadow-md shadow-blue-600/25 transition-all"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13h4m-2-2v4"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Right Action Buttons: Grid/List Toggle & Info Drawer Button -->
+          <div class="flex items-center gap-3">
+            <!-- Layout Toggle Button -->
+            <button
+              id="layoutToggleBtn"
+              onclick="toggleLayoutMode()"
+              title="Switch Grid / Table Layout"
+              aria-label="Switch grid or table layout"
+              class="w-10 h-10 rounded-[11px] bg-[#F1F3F7] hover:bg-[#E4E8F0] text-slate-500 hover:text-[#1E5CE6] flex items-center justify-center transition-all"
+            >
+              <svg class="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 20 20">
+                <rect x="3" y="3" width="6" height="4" rx="1"/>
+                <rect x="3" y="9" width="6" height="8" rx="1"/>
+                <rect x="11" y="3" width="6" height="8" rx="1"/>
+                <rect x="11" y="13" width="6" height="4" rx="1"/>
+              </svg>
+            </button>
+
+            <!-- Info (i) Panel Button -->
+            <button
+              id="infoDrawerBtn"
+              onclick="toggleInfoDrawer()"
+              title="Toggle File Details Panel"
+              aria-label="Toggle file details panel"
+              class="w-10 h-10 rounded-[11px] bg-[#F1F3F7] hover:bg-[#E4E8F0] text-slate-500 hover:text-[#1E5CE6] flex items-center justify-center transition-all"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="8.5"/>
+                <path stroke-linecap="round" d="M12 11.5v4.5M12 8.5h.01"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==================== DYNAMIC PAGE VIEW CONTAINER ==================== -->
+        <div id="pageContentContainer" class="flex-1 flex flex-col">
+          <!-- Populated dynamically by JavaScript based on active sidebar menu -->
+        </div>
+
+      </main>
+
+      <!-- ==================== SLIDE-OVER FILE INFO DRAWER ==================== -->
+      <aside
+        id="infoDrawer"
+        class="w-80 bg-slate-50/95 backdrop-blur-md border-l border-slate-200/80 p-6 flex flex-col justify-between transition-all duration-300 fixed lg:static right-0 inset-y-0 z-30 translate-x-full hidden"
+      >
+        <div>
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+            <div class="flex items-center gap-2.5">
+              <div id="drawerFileIcon" class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center"></div>
+              <h3 id="drawerFileName" class="font-bold text-sm text-slate-800 truncate max-w-[175px]">Team JB Picture.jpg</h3>
+            </div>
+            <button onclick="toggleInfoDrawer()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- File Visual Preview Box -->
+          <div id="drawerPreviewArea" class="my-5 rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-xs h-40 flex items-center justify-center relative group cursor-pointer" onclick="openFilePreviewModal()">
+            <img id="drawerPreviewImg" src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=500&auto=format&fit=crop&q=80" alt="Preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <div class="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="bg-white/95 text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md">Click to Preview</span>
+            </div>
+          </div>
+
+          <!-- Shared With Avatars -->
+          <div class="mb-5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Who has access</p>
+            <div class="flex items-center justify-between">
+              <div id="drawerAvatars" class="flex -space-x-2"></div>
+              <button onclick="showToast('Share settings opened for selected item')" class="text-xs font-semibold text-[#1E5CE6] hover:underline">Manage Access</button>
+            </div>
+          </div>
+
+          <!-- Properties List -->
+          <div class="space-y-3 text-xs border-t border-slate-200 pt-4 font-body">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Type</span>
+              <span id="drawerFileType" class="font-medium text-slate-700">JPEG Image</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Size</span>
+              <span id="drawerFileSize" class="font-medium text-slate-700">20 MB</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Location</span>
+              <span id="drawerFileLocation" class="font-medium text-[#1E5CE6]">My Drive</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Modified</span>
+              <span id="drawerFileModified" class="font-medium text-slate-700">Sep 9 ,2019 - 4:30 AM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drawer Bottom Quick Actions -->
+        <div class="pt-4 border-t border-slate-200 flex gap-2">
+          <button onclick="copySelectedFileLink()" class="flex-1 py-2.5 px-3 rounded-xl bg-white border border-slate-200 hover:border-[#1E5CE6] text-slate-700 hover:text-[#1E5CE6] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            Copy Link
+          </button>
+          <button onclick="openFilePreviewModal()" class="flex-1 py-2.5 px-3 rounded-xl bg-[#1E5CE6] hover:bg-[#1749B8] text-white font-semibold text-xs transition-colors">
+            Open File
+          </button>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ==================== FLOATING CONTEXT MENU (THREE DOTS) ==================== -->
+  <div id="rowContextMenu" class="hidden fixed bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 w-48 z-50 text-xs font-medium text-slate-700">
+    <button onclick="contextAction('preview')" class="w-full px-4 py-2 text-left hover:bg-blue-50 hover:text-[#1E5CE6] flex items-center gap-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      Preview File
+    </button>
+    <button onclick="contextAction('star')" class="w-full px-4 py-2 text-left hover:bg-blue-50 hover:text-[#1E5CE6] flex items-center gap-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+      Toggle Starred
+    </button>
+    <button onclick="contextAction('copy')" class="w-full px-4 py-2 text-left hover:bg-blue-50 hover:text-[#1E5CE6] flex items-center gap-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+      Copy Share Link
+    </button>
+    <button onclick="contextAction('rename')" class="w-full px-4 py-2 text-left hover:bg-blue-50 hover:text-[#1E5CE6] flex items-center gap-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+      Rename
+    </button>
+    <div class="my-1 border-t border-slate-100"></div>
+    <button onclick="contextAction('trash')" class="w-full px-4 py-2 text-left hover:bg-rose-50 text-rose-600 flex items-center gap-2.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      Move to Trash
+    </button>
+  </div>
+
+  <!-- ==================== MODAL 1: UPLOAD NEW FILES ==================== -->
+  <div id="uploadModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-[scaleIn_0.22s_ease-out]">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-50 text-[#1E5CE6] flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-slate-800">Upload New Files</h3>
+            <p class="text-xs text-slate-400">Add documents, spreadsheets, or media to Goodle Drive</p>
+          </div>
+        </div>
+        <button onclick="closeModal('uploadModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Dropzone -->
+      <label class="border-2 border-dashed border-blue-200 hover:border-[#1E5CE6] bg-blue-50/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors mb-4">
+        <input type="file" id="realFileInput" multiple class="hidden" onchange="handleRealFileSelect(this.files)"/>
+        <div class="w-12 h-12 rounded-full bg-white shadow-xs flex items-center justify-center text-[#1E5CE6] mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <p class="text-xs font-semibold text-slate-700 mb-1">Click to choose files or drag & drop here</p>
+        <p class="text-[11px] text-slate-400">Supports Docs, XLSX, PDF, JPG, PNG up to 500 MB</p>
+      </label>
+
+      <!-- Or Quick Custom File Creator -->
+      <div class="space-y-3 mb-5">
+        <div>
+          <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">File Name</label>
+          <input id="customUploadName" type="text" placeholder="e.g. Q4 Marketing Strategy.pdf" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#1E5CE6]"/>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">File Type</label>
+            <select id="customUploadType" class="w-full px-3 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#1E5CE6] bg-white">
+              <option value="doc">Google Docs (.doc)</option>
+              <option value="sheet">Spreadsheet (.xlss)</option>
+              <option value="pdf">PDF Document (.pdf)</option>
+              <option value="image">Image (.jpg)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1">Size (MB)</label>
+            <input id="customUploadSize" type="number" value="24" min="1" max="500" class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#1E5CE6]"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Simulated Progress Bar -->
+      <div id="uploadProgressBox" class="hidden mb-4">
+        <div class="flex justify-between text-xs font-semibold text-[#1E5CE6] mb-1">
+          <span id="uploadStatusLabel">Uploading to My Drive...</span>
+          <span id="uploadPercentLabel">0%</span>
+        </div>
+        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="uploadProgressBar" class="h-full bg-[#1E5CE6] transition-all duration-150" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2.5">
+        <button onclick="closeModal('uploadModal')" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+        <button onclick="startSimulatedUpload()" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-[#1E5CE6] hover:bg-[#1749B8] text-white shadow-md shadow-blue-600/20">Upload Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: NEW FOLDER / RENAME ==================== -->
+  <div id="newFolderModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl animate-[scaleIn_0.22s_ease-out]">
+      <h3 class="font-bold text-base text-slate-800 mb-1">Create New Quick Access Folder</h3>
+      <p class="text-xs text-slate-400 mb-4">Add a new shared folder directly to your Quick Access bar.</p>
+      <input id="newFolderInput" type="text" placeholder="e.g. Brand Guidelines 2025" class="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-[#1E5CE6] mb-4"/>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeModal('newFolderModal')" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
+        <button onclick="createNewFolder()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-[#1E5CE6] hover:bg-[#1749B8] text-white">Create Folder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: UPGRADE STORAGE ==================== -->
+  <div id="upgradeModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-7 shadow-2xl animate-[scaleIn_0.22s_ease-out]">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-[#1E5CE6] bg-blue-50 px-2.5 py-1 rounded-full">Goodle One Cloud Plans</span>
+          <h3 class="font-extrabold text-xl text-slate-800 mt-1">Upgrade Your Cloud Storage</h3>
+        </div>
+        <button onclick="closeModal('upgradeModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <!-- Plan 1 -->
+        <div class="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">Current Plan</p>
+            <h4 class="text-2xl font-extrabold text-slate-800 my-1">1 TB</h4>
+            <p class="text-xs text-slate-500 mb-4">$9.99 / month</p>
+          </div>
+          <button onclick="selectStoragePlan(1, '1 TB')" class="w-full py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600">Active</button>
+        </div>
+        <!-- Plan 2 -->
+        <div class="border-2 border-[#1E5CE6] bg-blue-50/30 rounded-2xl p-4 flex flex-col justify-between relative">
+          <span class="absolute -top-2.5 right-3 bg-[#1E5CE6] text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-full">Popular</span>
+          <div>
+            <p class="text-xs font-bold text-[#1E5CE6] uppercase">Pro Studio</p>
+            <h4 class="text-2xl font-extrabold text-slate-800 my-1">2 TB</h4>
+            <p class="text-xs text-slate-500 mb-4">$19.99 / month</p>
+          </div>
+          <button onclick="selectStoragePlan(2, '2 TB')" class="w-full py-2 rounded-xl text-xs font-semibold bg-[#1E5CE6] text-white hover:bg-[#1749B8]">Upgrade to 2 TB</button>
+        </div>
+        <!-- Plan 3 -->
+        <div class="border border-slate-200 rounded-2xl p-4 flex flex-col justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">Enterprise</p>
+            <h4 class="text-2xl font-extrabold text-slate-800 my-1">10 TB</h4>
+            <p class="text-xs text-slate-500 mb-4">$49.99 / month</p>
+          </div>
+          <button onclick="selectStoragePlan(10, '10 TB')" class="w-full py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800">Upgrade to 10 TB</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: FILE PREVIEW LIGHTBOX ==================== -->
+  <div id="previewModal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-[scaleIn_0.22s_ease-out]">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div id="previewModalIcon"></div>
+          <div>
+            <h3 id="previewModalTitle" class="font-bold text-sm text-slate-800">Weekly Report Docs</h3>
+            <p id="previewModalMeta" class="text-[11px] text-slate-400">Sep 9 ,2019 - 4:30 AM • 20 MB</p>
+          </div>
+        </div>
+        <button onclick="closeModal('previewModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="previewModalBody" class="my-5 rounded-2xl bg-slate-50 border border-slate-200/70 p-6 min-h-[210px] flex flex-col items-center justify-center text-center"></div>
+      <div class="flex justify-end gap-2">
+        <button onclick="copySelectedFileLink()" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50">Copy Share Link</button>
+        <button onclick="showToast('Downloading file...'); closeModal('previewModal')" class="px-5 py-2 rounded-xl text-xs font-semibold bg-[#1E5CE6] text-white hover:bg-[#1749B8]">Download File</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: SETTINGS ==================== -->
+  <div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-[scaleIn_0.22s_ease-out]">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-slate-800">Goodle Drive Preferences</h3>
+        <button onclick="closeModal('settingsModal')" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="space-y-4 text-xs text-slate-700 mb-6">
+        <label class="flex items-center justify-between cursor-pointer">
+          <span>Show Quick Access suggestions on My Drive</span>
+          <input type="checkbox" checked onchange="showToast('Preference saved')" class="w-4 h-4 accent-[#1E5CE6] rounded"/>
+        </label>
+        <label class="flex items-center justify-between cursor-pointer">
+          <span>Automatically sync desktop Computers folders</span>
+          <input type="checkbox" checked onchange="showToast('Auto-sync updated')" class="w-4 h-4 accent-[#1E5CE6] rounded"/>
+        </label>
+        <label class="flex items-center justify-between cursor-pointer">
+          <span>Convert uploaded Office files to Goodle Docs format</span>
+          <input type="checkbox" checked onchange="showToast('Conversion rule updated')" class="w-4 h-4 accent-[#1E5CE6] rounded"/>
+        </label>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeModal('settingsModal')" class="px-5 py-2 rounded-xl text-xs font-semibold bg-[#1E5CE6] text-white">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="toastBox" class="fixed bottom-6 right-6 bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 z-50 transition-all duration-300 translate-y-16 opacity-0 pointer-events-none">
+    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+    <span id="toastMessage">Link copied to clipboard!</span>
+  </div>
+
+</body>
+</html>

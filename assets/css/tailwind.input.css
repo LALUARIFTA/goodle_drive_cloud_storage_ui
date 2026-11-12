@@ -1,0 +1,5 @@
+/* Source file for compiled utility CSS. Build:
+   npx tailwindcss -c tailwind.config.cjs -i assets/css/tailwind.input.css -o assets/css/tailwind.css --minify */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
